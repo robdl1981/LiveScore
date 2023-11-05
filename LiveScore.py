@@ -41,18 +41,22 @@ def convertType(type):
     match type:
         case 36:
             return 'Goal'
+        case 37:
+            return 'Penalty Goal'
+        case 38:
+            return 'Penalty Miss'
+        case 39:
+            return 'Own Goal'
         case 43:
             return 'Yellow Card'
         case 44:
             return 'Second Yellow Card'
         case 45:
             return 'Red Card'
+        case 62:
+            return 'VAR'
         case 63:
             return 'Assist'
-        case 37:
-            return 'Penalty Goal'
-        case 39:
-            return 'Own Goal'
 
 def getStages(date):
     resp = httpx.get(f'https://prod-public-api.livescore.com/v1/api/app/date/soccer/{date}/1?countryCode=GB&locale=en')
