@@ -37,6 +37,12 @@ class Incidents:
     away_score: int
     incidents: List[Incident]
 
+@dataclass
+class Result:
+    id: int
+    date: int
+    time: int
+
 def convertType(type):
     match type:
         case 36:
@@ -146,3 +152,13 @@ def getIncidents(id, includeAssists = False):
                         incidents.append(Incident(minute, team, player, type))
 
     return Incidents(home_score, away_score, incidents)
+
+def findGame(date, team):
+    stages = getStages(date)
+
+    for stage in stages:
+        for event in stage.events:
+            if event.home_team == team or event.away_team == team:
+                return Result(int(event.id), int(str(event.start_time)[:8]), int(str(event.start_time)[8:12]))
+    
+    return None
