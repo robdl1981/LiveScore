@@ -17,6 +17,7 @@ class Stage:
 
 @dataclass
 class Incident:
+    id: int
     minute: int
     team: int
     player: str
@@ -139,18 +140,20 @@ def getIncidents(id, includeAssists = False):
                 team = inc['Nm']
 
                 if 'Pn' in inc and 'IT' in inc:
+                    id = inc['ID']
                     player = inc['Pn']
                     type = convertType(inc['IT'])
 
                     if type != 'Assist' or includeAssists == True:
-                        incidents.append(Incident(minute, team, player, type))
+                        incidents.append(Incident(id, minute, team, player, type))
                 else:
                     for subInc in inc['Incs']:
+                        id = subInc['ID']
                         player = subInc['Pn']
                         type = convertType(subInc['IT'])
 
                         if type != 'Assist' or includeAssists == True:
-                            incidents.append(Incident(minute, team, player, type))
+                            incidents.append(Incident(id, minute, team, player, type))
 
         return Incidents(home_score, away_score, incidents)
     else:
