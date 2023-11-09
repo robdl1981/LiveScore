@@ -1,4 +1,4 @@
 import LiveScore
 
-print(LiveScore.findGame(20231108, 'Bayern Munich'))
+print(LiveScore.getIncidents(1071929))
 

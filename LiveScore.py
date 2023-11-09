@@ -132,26 +132,29 @@ def getIncidents(id, includeAssists = False):
 
     incidents = []
 
-    for n in json['Incs']:
-        for inc in json['Incs'][n]:
-            minute = inc['Min']
-            team = inc['Nm']
+    if 'Incs' in json:
+        for n in json['Incs']:
+            for inc in json['Incs'][n]:
+                minute = inc['Min']
+                team = inc['Nm']
 
-            if 'Pn' in inc and 'IT' in inc:
-                player = inc['Pn']
-                type = convertType(inc['IT'])
-
-                if type != 'Assist' or includeAssists == True:
-                    incidents.append(Incident(minute, team, player, type))
-            else:
-                for subInc in inc['Incs']:
-                    player = subInc['Pn']
-                    type = convertType(subInc['IT'])
+                if 'Pn' in inc and 'IT' in inc:
+                    player = inc['Pn']
+                    type = convertType(inc['IT'])
 
                     if type != 'Assist' or includeAssists == True:
                         incidents.append(Incident(minute, team, player, type))
+                else:
+                    for subInc in inc['Incs']:
+                        player = subInc['Pn']
+                        type = convertType(subInc['IT'])
 
-    return Incidents(home_score, away_score, incidents)
+                        if type != 'Assist' or includeAssists == True:
+                            incidents.append(Incident(minute, team, player, type))
+
+        return Incidents(home_score, away_score, incidents)
+    else:
+        return None
 
 def findGame(date, team):
     stages = getStages(date)
