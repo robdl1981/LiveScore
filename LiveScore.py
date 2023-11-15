@@ -19,6 +19,7 @@ class Stage:
 class Incident:
     id: int
     minute: int
+    minute_ex: int
     team: int
     player: str
     type: str
@@ -139,6 +140,10 @@ def getIncidents(id, includeAssists = False):
         for n in json['Incs']:
             for inc in json['Incs'][n]:
                 minute = inc['Min']
+                if 'MinEx' in inc:
+                    minute_ex = inc['MinEx']
+                else:
+                    minute_ex = 0
                 team = inc['Nm']
 
                 if 'Pn' in inc and 'IT' in inc:
@@ -147,7 +152,7 @@ def getIncidents(id, includeAssists = False):
                     type = convertType(inc['IT'])
 
                     if type != 'Assist' or includeAssists == True:
-                        incidents.append(Incident(id, minute, team, player, type))
+                        incidents.append(Incident(id, minute, minute_ex, team, player, type))
                 else:
                     for subInc in inc['Incs']:
                         id = subInc['ID']
@@ -155,7 +160,7 @@ def getIncidents(id, includeAssists = False):
                         type = convertType(subInc['IT'])
 
                         if type != 'Assist' or includeAssists == True:
-                            incidents.append(Incident(id, minute, team, player, type))
+                            incidents.append(Incident(id, minute, minute_ex, team, player, type))
 
         return Incidents(home_score, away_score, incidents)
     else:
