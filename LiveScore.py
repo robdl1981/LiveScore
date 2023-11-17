@@ -107,6 +107,10 @@ def getScoreBoard(id, includeAssists = False):
     for n in json['Incs-s']:
         for inc in json['Incs-s'][n]:
             minute = inc['Min']
+            if 'MinEx' in inc:
+                minute_ex = inc['MinEx']
+            else:
+                minute_ex = 0
             team = inc['Nm']
 
             if 'Pn' in inc and 'IT' in inc:
@@ -115,7 +119,7 @@ def getScoreBoard(id, includeAssists = False):
                 type = convertType(inc['IT'])
 
                 if type != 'Assist' or includeAssists == True:
-                    incidents.append(Incident(id, minute, team, player, type))
+                    incidents.append(Incident(id, minute, minute_ex, team, player, type))
             else:
                 for subInc in inc['Incs']:
                     id = subInc['ID']
@@ -123,7 +127,7 @@ def getScoreBoard(id, includeAssists = False):
                     type = convertType(subInc['IT'])
 
                     if type != 'Assist' or includeAssists == True:
-                        incidents.append(Incident(id, minute, team, player, type))
+                        incidents.append(Incident(id, minute, minute_ex, team, player, type))
     
     return ScoreBoard(home_team, away_team, home_score, away_score, status, incidents)
 
