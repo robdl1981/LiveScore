@@ -5,5 +5,5 @@ import LiveScore
 # for incident in incidents:
 #     print(incident)
 
-print(LiveScore.getIncidents(968373))
+print(LiveScore.getScoreBoard(968373))
 
