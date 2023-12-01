@@ -1,9 +1,14 @@
-import LiveScore
+from LiveScore2 import LiveScore
+from rich import print
 
 # incidents = LiveScore.getIncidents(1071929).incidents
 
 # for incident in incidents:
 #     print(incident)
 
-print(LiveScore.getScoreBoard(968373))
+livescore = LiveScore()
+
+test = livescore.getGameInPlay(966795)
+
+print(test)
 
