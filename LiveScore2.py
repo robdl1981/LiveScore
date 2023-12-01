@@ -81,7 +81,7 @@ class LiveScore:
             country = game['Cnm']
 
             for event in game['Events']:
-                event_id = event['Eid']
+                game_id = event['Eid']
                 home_team = event['T1'][0]['Nm']
                 away_team = event['T2'][0]['Nm']
                 start_time = event['Esd']
@@ -89,7 +89,7 @@ class LiveScore:
                 games.append(Game(
                     competition=competition,
                     country=country,
-                    event_id=event_id,
+                    game_id=game_id,
                     home_team=home_team,
                     away_team=away_team,
                     start_time=start_time
@@ -108,7 +108,7 @@ class LiveScore:
                     filtered_games.append(game)
 
             if filtered_games:
-                return filtered_games[0]
+                return filtered_games
             else:
                 return None
 

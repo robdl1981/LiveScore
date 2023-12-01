@@ -1,5 +1,6 @@
-from LiveScore2 import LiveScore
+from LiveScore2 import LiveScore, Game, GameInPlay
 from rich import print
+from typing import List
 
 # incidents = LiveScore.getIncidents(1071929).incidents
 
@@ -8,7 +9,15 @@ from rich import print
 
 livescore = LiveScore()
 
-test = livescore.getGameInPlay(966795)
+# games: List[Game] = livescore.getGames('20231202', 'Arsenal')
 
-print(test)
+games: List[Game] = livescore.getGames()
+
+print(games)
+
+game_id = games[0].game_id
+
+game: GameInPlay = livescore.getGameInPlay(game_id)
+
+print(game)
 
