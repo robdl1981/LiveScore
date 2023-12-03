@@ -1,4 +1,4 @@
-from LiveScore2 import LiveScore, Game, GameInPlay
+from LiveScore import LiveScore, Game, GameInPlay
 from rich import print
 from typing import List
 

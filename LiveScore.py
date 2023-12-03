@@ -128,7 +128,6 @@ class LiveScore:
         home_score = response_json['Tr1']
         away_score = response_json['Tr2']
 
-
         events_response = httpx.get(f'https://prod-public-api.livescore.com/v1/api/app/incidents/soccer/{id}?locale=en')
 
         events_response_json = events_response.json()
