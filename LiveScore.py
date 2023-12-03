@@ -1,184 +1,196 @@
 import httpx
 from dataclasses import dataclass
+from datetime import date
 from typing import List
 
 @dataclass
-class Event:
-    id: int
+class Game:
+    competition: str
+    country: str
+    game_id: int
     home_team: str
     away_team: str
     start_time: int
 
 @dataclass
-class Stage:
-    name: str
-    country: str
-    events: List[Event]
-
-@dataclass
-class Incident:
-    id: int
+class Event:
+    event_id: int
     minute: int
-    minute_ex: int
-    team: int
+    minute_extra: int
     player: str
-    type: str
+    team: str
+    event_type: str
+    home_score_updated: int
+    away_score_updated: int
 
 @dataclass
-class ScoreBoard:
+class GameInPlay:
+    game_id: int
+    status: int
     home_team: str
     away_team: str
     home_score: int
     away_score: int
-    status: str
-    incidents: List[Incident]
+    events: List[Event]
 
-@dataclass
-class Incidents:
-    home_score: int
-    away_score: int
-    incidents: List[Incident]
+class LiveScore:
+    date_today = None
 
-@dataclass
-class Result:
-    id: int
-    date: int
-    time: int
+    def convertType(self, type):
+        match type:
+            case 36:
+                return 'Goal'
+            case 37:
+                return 'Penalty Goal'
+            case 38:
+                return 'Penalty Miss'
+            case 39:
+                return 'Own Goal'
+            case 40:
+                return 'Penalty Shootout Miss'
+            case 41:
+                return 'Penalty Shootout Goal'
+            case 43:
+                return 'Yellow Card'
+            case 44:
+                return 'Second Yellow Card'
+            case 45:
+                return 'Red Card'
+            case 62:
+                return 'VAR'
+            case 63:
+                return 'Assist'
 
-def convertType(type):
-    match type:
-        case 36:
-            return 'Goal'
-        case 37:
-            return 'Penalty Goal'
-        case 38:
-            return 'Penalty Miss'
-        case 39:
-            return 'Own Goal'
-        case 43:
-            return 'Yellow Card'
-        case 44:
-            return 'Second Yellow Card'
-        case 45:
-            return 'Red Card'
-        case 62:
-            return 'VAR'
-        case 63:
-            return 'Assist'
+    def __init__(self):
+        global date_today
 
-def getStages(date):
-    resp = httpx.get(f'https://prod-public-api.livescore.com/v1/api/app/date/soccer/{date}/1?countryCode=GB&locale=en')
-    json = resp.json()
+        date_today = date.today().strftime('%Y%m%d')
 
-    stages = []
-
-    for stage in json['Stages']:
-        name = stage['Snm']
-        country = stage['Cnm']
+    def getGames(self, date=None, team=None):
+        if date == None:
+            date = date_today
         
-        eventsJson = stage['Events']
+        response = httpx.get(f'https://prod-public-api.livescore.com/v1/api/app/date/soccer/{date}/1?countryCode=GB&locale=en')
 
-        events = []
+        response_json = response.json()
 
-        for event in eventsJson:
-            id = event['Eid']
-            home_team = event['T1'][0]['Nm']
-            away_team = event['T2'][0]['Nm']
-            start_time = event['Esd']
+        games = []
 
-            events.append(Event(id, home_team, away_team, start_time))
+        for game in response_json['Stages']:
+            competition = game['CompN'] if 'CompN' in game else game['Snm']
+            country = game['Cnm']
 
-        stages.append(Stage(name, country, events))
+            for event in game['Events']:
+                game_id = event['Eid']
+                home_team = event['T1'][0]['Nm']
+                away_team = event['T2'][0]['Nm']
+                start_time = event['Esd']
 
-    return stages
+                games.append(Game(
+                    competition=competition,
+                    country=country,
+                    game_id=game_id,
+                    home_team=home_team,
+                    away_team=away_team,
+                    start_time=start_time
+                ))
 
-def getScoreBoard(id, includeAssists = False):
-    resp = httpx.get(f'https://prod-public-api.livescore.com/v1/api/app/scoreboard/soccer/{id}?locale=en')
-    json = resp.json()
+        if team == None:
+            if games:
+                return games
+            else:
+                return None
+        else:
+            filtered_games = []
 
-    home_team = json['T1'][0]['Nm']
-    away_team = json['T2'][0]['Nm']
-    home_score = json['Tr1']
-    away_score = json['Tr2']
-    status = json['Eps']
+            for game in games:
+                if game.home_team == team or game.away_team == team:
+                    filtered_games.append(game)
 
-    incidents = []
+            if filtered_games:
+                return filtered_games
+            else:
+                return None
 
-    if 'Incs-s' in json:
-        for n in json['Incs-s']:
-            for inc in json['Incs-s'][n]:
-                minute = inc['Min']
-                if 'MinEx' in inc:
-                    minute_ex = inc['MinEx']
-                else:
-                    minute_ex = 0
-                team = inc['Nm']
+    def getGameInPlay(self, id):
+        response = httpx.get(f'https://prod-public-api.livescore.com/v1/api/app/scoreboard/soccer/{id}?locale=en')
 
-                if 'Pn' in inc and 'IT' in inc:
-                    id = inc['ID']
-                    player = inc['Pn']
-                    type = convertType(inc['IT'])
+        response_json = response.json()
 
-                    if type != 'Assist' or includeAssists == True:
-                        incidents.append(Incident(id, minute, minute_ex, team, player, type))
-                else:
-                    for subInc in inc['Incs']:
-                        id = subInc['ID']
-                        player = subInc['Pn']
-                        type = convertType(subInc['IT'])
-
-                        if type != 'Assist' or includeAssists == True:
-                            incidents.append(Incident(id, minute, minute_ex, team, player, type))
+        game_id = response_json['Eid']
+        status = response_json['Eps']
+        home_team = response_json['T1'][0]['Nm']
+        away_team = response_json['T2'][0]['Nm']
         
-        return ScoreBoard(home_team, away_team, home_score, away_score, status, incidents)
-    else:
-        return None
+        if status == 'NS':
+            return None
+        
+        home_score = response_json['Tr1']
+        away_score = response_json['Tr2']
 
-def getIncidents(id, includeAssists = False):
-    resp = httpx.get(f'https://prod-public-api.livescore.com/v1/api/app/incidents/soccer/{id}?locale=en')
-    json = resp.json()
 
-    home_score = json['Tr1']
-    away_score = json['Tr2']
+        events_response = httpx.get(f'https://prod-public-api.livescore.com/v1/api/app/incidents/soccer/{id}?locale=en')
 
-    incidents = []
+        events_response_json = events_response.json()
 
-    if 'Incs' in json:
-        for n in json['Incs']:
-            for inc in json['Incs'][n]:
-                minute = inc['Min']
-                if 'MinEx' in inc:
-                    minute_ex = inc['MinEx']
-                else:
-                    minute_ex = 0
-                team = inc['Nm']
+        if 'Incs' in events_response_json:
+            if len(events_response_json['Incs']) > 0:
+                events = []
 
-                if 'Pn' in inc and 'IT' in inc:
-                    id = inc['ID']
-                    player = inc['Pn']
-                    type = convertType(inc['IT'])
+                for root_event in events_response_json['Incs']:
+                    for event in events_response_json['Incs'][root_event]:
+                        if 'Incs' in event:
+                            for sub_event in event['Incs']:
+                                event_id = sub_event['ID']
+                                minute = sub_event['Min'] if 'Min' in sub_event else None
+                                minute_extra = sub_event['MinEx'] if 'MinEx' in sub_event else None
+                                player = sub_event['Pn']
+                                team = home_team if sub_event['Nm'] == 1 else away_team
+                                event_type = self.convertType(sub_event['IT'])
+                                home_score_updated = sub_event['Sc'][0] if 'Sc' in sub_event else None
+                                away_score_updated = sub_event['Sc'][1] if 'Sc' in sub_event else None
 
-                    if type != 'Assist' or includeAssists == True:
-                        incidents.append(Incident(id, minute, minute_ex, team, player, type))
-                else:
-                    for subInc in inc['Incs']:
-                        id = subInc['ID']
-                        player = subInc['Pn']
-                        type = convertType(subInc['IT'])
+                                events.append(Event(
+                                    event_id=event_id,
+                                    minute=minute,
+                                    minute_extra=minute_extra,
+                                    player=player,
+                                    team=team,
+                                    event_type=event_type,
+                                    home_score_updated=home_score_updated,
+                                    away_score_updated=away_score_updated
+                                ))
+                        else:
+                            event_id = event['ID']
+                            minute = event['Min'] if 'Min' in event else None
+                            minute_extra = event['MinEx'] if 'MinEx' in event else None
+                            player = event['Pn']
+                            team = home_team if event['Nm'] == 1 else away_team
+                            event_type = self.convertType(event['IT'])
+                            home_score_updated = event['Sc'][0] if 'Sc' in event else None
+                            away_score_updated = event['Sc'][1] if 'Sc' in event else None
 
-                        if type != 'Assist' or includeAssists == True:
-                            incidents.append(Incident(id, minute, minute_ex, team, player, type))
+                            events.append(Event(
+                                event_id=event_id,
+                                minute=minute,
+                                minute_extra=minute_extra,
+                                player=player,
+                                team=team,
+                                event_type=event_type,
+                                home_score_updated=home_score_updated,
+                                away_score_updated=away_score_updated
+                            ))
+            else:
+                events = None
+        else:
+            events = None
 
-        return Incidents(home_score, away_score, incidents)
-    else:
-        return None
-
-def findGame(date, team):
-    stages = getStages(date)
-
-    for stage in stages:
-        for event in stage.events:
-            if event.home_team == team or event.away_team == team:
-                return Result(int(event.id), int(str(event.start_time)[:8]), int(str(event.start_time)[8:12]))
-    
-    return None
+        return GameInPlay(
+            game_id=game_id,
+            status=status,
+            home_team=home_team,
+            away_team=away_team,
+            home_score=home_score,
+            away_score=away_score,
+            events=events
+        )
